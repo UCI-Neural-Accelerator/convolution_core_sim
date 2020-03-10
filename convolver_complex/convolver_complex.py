@@ -41,7 +41,7 @@ def mult_fixed_point(pixel: int, weight: int) -> int:
     size = sys.getsizeof(mult)
 
     # return fixed point result
-    return (((mult >> (size - 1)) << (DATA_WIDTH - 1)) | ((mult & 0b011111111111111100000000) >> (int(DATA_WIDTH / 2))))
+    return ((mult & 0b111111111111111100000000) >> (int(DATA_WIDTH / 2)))
 
 
 def add_fixed_point(a: int, b: int) -> int:
@@ -53,7 +53,7 @@ def add_fixed_point(a: int, b: int) -> int:
     size = sys.getsizeof(add)
 
     # return fixed point result
-    return (((add >> (size - 1)) << (DATA_WIDTH - 1)) | (add & 0b0111111111111111))
+    return (add & 0b1111111111111111)
 
 def return_fixed_point(a: int) -> str:
 

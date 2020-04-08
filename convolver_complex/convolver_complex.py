@@ -1,108 +1,102 @@
 import random
 import sys
+import numpy as np
 
-DATA_WIDTH = 16
 
-BIAS = 0b0000000000000000
+def generate_test_data(kernel: np.ndarray, bias: np.uint16, samples: int):
+    """
+    """
 
-KERNEL_SIZE = (5, 5)
-KERNEL = [
-            [
-                (1 << 8) for i in range(KERNEL_SIZE[0])
-            ] for i in range(KERNEL_SIZE[1])
-        ]
-'''KERNEL = [
-            [
-                random.randint(0, 9) for i in range(KERNEL_SIZE[0])
-            ] for i in range(KERNEL_SIZE[1])
-        ]'''
-IMAGE_SIZE = (5, 5)
-IMAGE = [
-            [
-                # generate random integers of the correct binary size
-                (2 << 8) for i in range(IMAGE_SIZE[0])
-            ] for i in range(IMAGE_SIZE[1])
-        ]
-'''IMAGE = [
-            [
-                # generate random integers of the correct binary size
-                random.randint(0, (2 ** 16) - 1) for i in range(IMAGE_SIZE[0])
-            ] for i in range(IMAGE_SIZE[1])
-        ]'''
+    # data to be written
+    data = np.empty(1, np.uint16)
+
+    # generate the required number of samples
+    for i in range(samples):
+        # generate random image
+        image = np.random.randint(((2**16)-1), size=(5, 5), dtype=np.uint16)
+
+        # perform convolution operation
+        output = convolution(image, kernel, bias)
+
+        # add image and output to data
+        data = np.append(data, image)
+        data = np.append(data, output)
+
+    data.tofile("test.bin")
 
 
 
-def mult_fixed_point(pixel: int, weight: int) -> int:
+
+def convolution(image: np.ndarray, kernel: np.ndarray, bias: np.uint16, printing=False) -> np.uint16:
+    if (printing):
+        print("KERNEL:")
+        for row in kernel:
+            for element in row:
+                print(return_fixed_point(element), end='')
+                print("\t", end='')
+            print('')
+        print('')
+
+        print("IMAGE:")
+        for row in image:
+            for element in row:
+                print(return_fixed_point(element), end='')
+                print("\t", end='')
+            print('')
+        print('')
+        
+        print('BIAS:')
+        print(return_fixed_point(bias))
+        print('')
+
+
+    # multiplication
+    mult = np.zeros((5, 5), dtype=np.uint16)
+    for i in range(5):
+        for j in range(5):
+            mult[i, j] = mult_fixed_point(kernel[i, j], image[i, j])
+
+    # accumulation
+    sum = np.sum(mult, dtype=np.uint16)
+
+    # bias
+    sum = add_fixed_point(sum, bias)
+
+    if (printing):
+        print('RESULT:')
+        print(return_fixed_point(sum))
+
+    return sum
+
+
+
+def mult_fixed_point(pixel: np.uint16, weight: np.uint16) -> np.uint16:
 
     # multiply the inputs
-    mult = pixel * weight
-
-    # get size of the result
-    size = sys.getsizeof(mult)
+    mult = np.uint32(pixel) * np.uint32(weight)
 
     # return fixed point result
-    return ((mult & 0b111111111111111100000000) >> (int(DATA_WIDTH / 2)))
+    return np.uint16(mult >> 8)
 
 
-def add_fixed_point(a: int, b: int) -> int:
-
-    # add the inputs
-    add = a + b
-
-    # get the size of the result
-    size = sys.getsizeof(add)
-
+def add_fixed_point(a: np.uint16, b: np.uint16) -> np.uint16:
+    
     # return fixed point result
-    return (add & 0b1111111111111111)
+    return np.uint16(a + b)
 
-def return_fixed_point(a: int) -> str:
+def return_fixed_point(a: np.uint16) -> str:
 
-    integer_part = bin((a & 0b1111111100000000) >> 8)[2:]
-    frac_part = bin(a & 0b0000000011111111)[2:]
+    integer_part = np.binary_repr(np.uint8(a >> 8))
+    frac_part = np.binary_repr(np.uint8(a))
 
     return integer_part + '.' + frac_part
      
 
-
-def unit():
-
-    print("KERNEL:")
-    for row in KERNEL:
-        for element in row:
-            print(return_fixed_point(element), end='')
-            print("\t", end='')
-        print('')
-    print('')
-
-    print("IMAGE:")
-    for row in IMAGE:
-        for element in row:
-            print(return_fixed_point(element), end='')
-            print("\t", end='')
-        print('')
-    print('')
-    
-    print('BIAS:')
-    print(return_fixed_point(BIAS))
-    print('')
-
-
-    # multiplication
-    mult = []
-    for i in range(KERNEL_SIZE[0]):
-        for j in range(KERNEL_SIZE[1]):
-            mult.append(mult_fixed_point(KERNEL[i][j], IMAGE[i][j]))
-
-    # accumulation
-    sum = 0
-    for element in mult:
-        sum = add_fixed_point(sum, element)
-
-    # bias
-    sum = add_fixed_point(sum, BIAS)
-
-    print('RESULT:')
-    print(return_fixed_point(sum))
-
 if __name__ == '__main__':
-    unit()
+    kernel = np.zeros((5, 5), np.uint16)
+    bias = np.zeros(1, np.uint16)
+    
+    kernel[:, :] = 0x0100
+    bias = 0x0000
+    
+    generate_test_data(kernel, bias, 10)

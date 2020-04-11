@@ -2,27 +2,29 @@ import random
 import sys
 import numpy as np
 
+import file_out
+
 
 def generate_test_data(kernel: np.ndarray, bias: np.uint16, samples: int):
     """
-    """
+    Generates testing data for fixed point convolution testing.
 
-    # data to be written
-    data = np.empty(1, np.uint16)
+    Args:
+        kernel: uint16 numpy array that contains the kernel infomation
+        bias: uint16 value for the bias
+        samples: number of testing samples desired
+    """
 
     # generate the required number of samples
     for i in range(samples):
         # generate random image
         image = np.random.randint(((2**16)-1), size=(5, 5), dtype=np.uint16)
+        file_out.write_to_file(image, 'in.txt')     # write random image to file
 
         # perform convolution operation
         output = convolution(image, kernel, bias)
+        file_out.write_to_file(output, 'out.txt')   # write output to file
 
-        # add image and output to data
-        data = np.append(data, image)
-        data = np.append(data, output)
-
-    data.tofile("test.bin")
 
 
 
@@ -99,4 +101,4 @@ if __name__ == '__main__':
     kernel[:, :] = 0x0100
     bias = 0x0000
     
-    generate_test_data(kernel, bias, 10)
+    generate_test_data(kernel, bias, 1)

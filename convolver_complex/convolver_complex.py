@@ -3,7 +3,7 @@ import sys
 import math
 import numpy as np
 
-import file_out
+#import file_out
 
 
 def generate_random_data(samples=1):
@@ -20,10 +20,10 @@ def generate_random_data(samples=1):
         kernel = rand_kernel(5)
         bias = rand_bias()
 
-        generate_files(image, kernel, bias)
+    generate_files(image, kernel, bias)
 
 
-def generate_files(image: np.ndarray, kernel: np.ndarray, bias: np.uint16):
+def generate_files(image: np.ndarray, kernel: np.ndarray, bias: np.int16):
     """
     Generates testing data for fixed point convolution testing.
 
@@ -60,8 +60,6 @@ def generate_files(image: np.ndarray, kernel: np.ndarray, bias: np.uint16):
     kernel_file.close()
     bias_file.close()
     output_file.close()
-
-    
 
 
 def rand_image(height: int, width: int) -> np.ndarray:
@@ -116,7 +114,7 @@ def rand_bias():
     return bias
 
 
-def convolution(image: np.ndarray, kernel: np.ndarray, bias: np.uint16) -> np.ndarray:
+def convolution(image: np.ndarray, kernel: np.ndarray, bias: np.int16) -> np.ndarray:
     """
     Computes convolution with input image and kernel
     Args:
@@ -135,19 +133,19 @@ def convolution(image: np.ndarray, kernel: np.ndarray, bias: np.uint16) -> np.nd
     output_size = (image.shape[0] - (2 * border_thickness[0]), image.shape[1] - (2 * border_thickness[1]))
 
     # create the empty output image array
-    output = np.zeros(output_size, dtype=np.uint16)
+    output = np.zeros(output_size, dtype=np.int16)
 
     # iterate over input image
     for x in range(output_size[0]):
         for y in range(output_size[1]):
             # multiplication
-            mult = np.zeros((kernel.shape[0], kernel.shape[0]), dtype=np.uint16)
+            mult = np.zeros((kernel.shape[0], kernel.shape[1]), dtype=np.int16)
             for i in range(kernel.shape[0]):
-                for j in range(kernel.shape[0]):
+                for j in range(kernel.shape[1]):
                     mult[i, j] = mult_fixed_point(kernel[i, j], image[x + i, y + j])
 
             # accumulation
-            sum = np.sum(mult, dtype=np.uint16)
+            sum = np.sum(mult, dtype=np.int16)
 
             # bias
             sum = add_fixed_point(sum, bias)
@@ -157,27 +155,27 @@ def convolution(image: np.ndarray, kernel: np.ndarray, bias: np.uint16) -> np.nd
     return output
 
 
-def mult_fixed_point(pixel: np.uint16, weight: np.uint16) -> np.uint16:
+def mult_fixed_point(pixel: np.int16, weight: np.int16) -> np.int16:
 
     # multiply the inputs
-    mult = np.uint32(pixel) * np.uint32(weight)
+    mult = np.int32(pixel) * np.int32(weight)
 
     # return fixed point result
-    return np.uint16(mult >> 8)
+    return np.int16(mult >> 8)
 
 
-def add_fixed_point(a: np.uint16, b: np.uint16) -> np.uint16:
+def add_fixed_point(a: np.int16, b: np.int16) -> np.int16:
     
     # return fixed point result
-    return np.uint16(a + b)
+    return np.int16(a + b)
 
-def return_fixed_point(a: np.uint16) -> str:
+# def return_fixed_point(a: np.uint16) -> str:
 
-    integer_part = np.binary_repr(np.uint8(a >> 8))
-    frac_part = np.binary_repr(np.uint8(a))
+    # integer_part = np.binary_repr(np.uint8(a >> 8))
+    # frac_part = np.binary_repr(np.uint8(a))
 
-    return integer_part + '.' + frac_part
-     
+    # return integer_part + '.' + frac_part
+
 
 if __name__ == '__main__':
     generate_random_data()
